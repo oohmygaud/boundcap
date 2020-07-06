@@ -8,3 +8,7 @@ class Entity(models.Model):
 
 class User(AbstractUser):
     pass
+
+class UserAllowedEntity(models.Model):
+    entity = models.ForeignKey(Entity, on_delete=models.DO_NOTHING, related_name='permissions')
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='permissions')

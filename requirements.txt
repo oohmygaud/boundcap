@@ -1,0 +1,8 @@
+Django==3.0.7
+django-rest-framework
+django-rest-registration
+django-cors-headers
+django-webpack-loader
+django-extensions
+django-filter
+pyyaml

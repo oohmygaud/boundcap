@@ -8,6 +8,14 @@ class AssetViewSet(viewsets.ModelViewSet):
     queryset = Asset.objects.all()
     serializer_class = AssetSerializer
 
+
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
+    filterset_fields = ["title", "status"]
+    search_fields = ["title"]
+    ordering_fields = '__all__'
+
+    def get_queryset(self):
+        qs = Account.objects.filter(entity__permissions__user=self.request.user)
+        return qs

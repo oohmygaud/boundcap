@@ -15,7 +15,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf.urls import include
+from backend.assets.views import AssetViewSet, AccountViewSet
+from backend.transactions.views import TransactionViewSet
+from backend.users.views import UserViewSet
+from rest_framework import routers
+from backend.users import views
+
+router = routers.SimpleRouter()
+router.register(r"assets", AssetViewSet)
+router.register(r"accounts", AccountViewSet)
+router.register(r"transactions", TransactionViewSet)
+router.register(r"users", UserViewSet)
+
+api_urlpatterns = [path("auth/", include("rest_registration.api.urls"))] + router.urls
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("api/", include(api_urlpatterns)),
+    path("admin/", admin.site.urls),
+    path("", views.private),
+    path("register/", views.public),
+    path("login/", views.public),
 ]

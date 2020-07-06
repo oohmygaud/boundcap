@@ -1,11 +1,7 @@
 from rest_framework import serializers
 from .models import Asset, Account
 
-
-class AssetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asset
-        fields = [
+ASSET_FIELDS =  [
             "id",
             "currency",
             "entity",
@@ -15,8 +11,13 @@ class AssetSerializer(serializers.ModelSerializer):
             "archived_at",
         ]
 
+class AssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = ASSET_FIELDS
+
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ["externalId", "title", "status", "current_balance_in_cents"]
+        fields = ["externalId", "title", "status", "current_balance_in_cents"] + ASSET_FIELDS

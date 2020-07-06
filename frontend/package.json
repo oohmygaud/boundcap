@@ -1,0 +1,43 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.10.2",
+    "@material-ui/icons": "^4.9.1",
+    "customize-cra": "^1.0.0",
+    "material-table": "^1.62.0",
+    "navi": "0.14.0",
+    "navi-scripts": "0.14.0",
+    "react": "^16.13.1",
+    "react-app-rewired": "^2.1.6",
+    "react-dom": "^16.13.1",
+    "react-hook-form": "^5.7.2",
+    "react-navi": "0.14.4",
+    "react-scripts": "^3.4.1",
+    "use-http": "^1.0.13",
+    "webpack-bundle-tracker": "0.4.3"
+  },
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build && navi-scripts build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "serve": "navi-scripts serve"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
