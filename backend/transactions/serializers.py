@@ -13,6 +13,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = [
             "id",
+            "external_id",
             "account",
             "account_data",
             "import_date",

@@ -7,7 +7,7 @@ from .serializers import TransactionSerializer
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     filterset_fields = ["account", "category", "is_transfer", "is_spending", "merchant"]
-    search_fields = ["account", "category", "merchant"]
+    search_fields = ["account__title", "category", "merchant"]
     ordering_fields = "__all__"
 
     def get_queryset(self):

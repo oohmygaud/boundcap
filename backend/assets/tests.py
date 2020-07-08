@@ -2,13 +2,20 @@ from django.test import TestCase
 from rest_framework.test import APIClient, APIRequestFactory
 from rest_framework.test import force_authenticate
 from ..users.models import User, Entity, UserAllowedEntity
+from ..errors.models import Error
 from .models import Currency, Account
 from .views import AccountViewSet
+import yaml
+from scripts.import_accounts import import_accounts
 
 # Create your tests here.
 accountView = AccountViewSet.as_view(
     {"get": "list", "post": "create", "put": "update", "delete": "destroy"}
 )
+
+def get_account_data():
+    account_data = yaml.load(open("backend/assets/fixtures/testAccount.yaml"), Loader=yaml.FullLoader)
+    return account_data
 
 
 class AssetTestCase(TestCase):
@@ -22,6 +29,7 @@ class AssetTestCase(TestCase):
         entity = Entity.objects.create(title="TestEntity")
         # Create a currency
         currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
         # Post to the account API
         create_account = {
@@ -55,7 +63,6 @@ class AssetTestCase(TestCase):
         )
         force_authenticate(request2, user=user)
         response2 = accountView(request2, pk=account.id)
-        print(response2)
         # Confirm there is still one account with the corrected balance
         self.assertEqual(Account.objects.count(), 1)
         self.assertEqual(Account.objects.first().current_balance_in_cents, 5678)
@@ -84,11 +91,11 @@ class AssetTestCase(TestCase):
         entity1 = Entity.objects.create(title="TestEntity1")
         # Create entity 2
         entity2 = Entity.objects.create(title="TestEntity2")
-        # User 1 is in Entity 1 (Personal Entity)
+        # User 1 has permissions for Entity 1 (Personal Entity)
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity1, user=user1)
-        # User 1 is in Entity 2 (Group Entity)
+        # User 1 has permissions for 2 (Group Entity)
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity2, user=user1)
-        # User 2 is in Entity 2 (Group Entity)
+        # User 2 has permissions for Entity 2 (Group Entity)
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity2, user=user2)
 
         # Create a currency
@@ -121,6 +128,7 @@ class AssetTestCase(TestCase):
         entity = Entity.objects.create(title="TestEntity")
         # Create a currency
         currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
         # Create three accounts
         create_account1 = {
@@ -179,6 +187,7 @@ class AssetTestCase(TestCase):
         entity = Entity.objects.create(title="TestEntity")
         # Create a currency
         currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
         # Create two accounts
         create_account1 = {
@@ -227,4 +236,20 @@ class AssetTestCase(TestCase):
         response6 = accountView(request6)
         # Confirm first result is the account with the least amount, with externalId 2222222
         self.assertEqual(response6.data["results"][0]["externalId"], 2222222)
-
+    
+    def test_import_account(self):
+        factory = APIRequestFactory()
+        # Create a user
+        user = User.objects.create_user(
+            username="testUser", email="example@example.com", password="somepassword123"
+        )
+        # Create an entity
+        entity = Entity.objects.create(title="TestEntity")
+        # Create a currency
+        currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
+        userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
+        # Import account
+        import_accounts(get_account_data(), currency, entity)
+        # Confirm one account was imported
+        self.assertEqual(Account.objects.count(), 1)

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "backend.assets",
     "backend.transactions",
     "backend.users",
+    "backend.errors",
     "django_filters",
 ]
 

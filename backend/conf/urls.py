@@ -18,6 +18,7 @@ from django.urls import path
 from django.conf.urls import include
 from backend.assets.views import AssetViewSet, AccountViewSet
 from backend.transactions.views import TransactionViewSet
+from backend.errors.views import ErrorViewSet
 from backend.users.views import UserViewSet
 from rest_framework import routers
 from backend.users import views
@@ -27,6 +28,7 @@ router.register(r"assets", AssetViewSet)
 router.register(r"accounts", AccountViewSet)
 router.register(r"transactions", TransactionViewSet)
 router.register(r"users", UserViewSet)
+router.register(r"errors", ErrorViewSet)
 
 api_urlpatterns = [path("auth/", include("rest_registration.api.urls"))] + router.urls
 

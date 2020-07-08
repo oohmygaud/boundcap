@@ -10,6 +10,7 @@ class RandomPKBase(models.Model):
 
 class Transaction(RandomPKBase):
     account = models.ForeignKey(Account, on_delete=models.DO_NOTHING)
+    external_id = models.BigIntegerField()
     import_date = models.DateTimeField(auto_now_add=True)
     effective_date = models.DateTimeField(null=True, blank=True)
     category = models.CharField(max_length=36)

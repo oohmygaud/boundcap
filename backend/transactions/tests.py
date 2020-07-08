@@ -3,13 +3,30 @@ from rest_framework.test import APIClient, APIRequestFactory
 from rest_framework.test import force_authenticate
 from ..users.models import User, Entity, UserAllowedEntity
 from ..assets.models import Currency, Account
+from ..errors.models import Error
 from .views import TransactionViewSet
 from .models import Transaction
+import json
+import yaml
+from scripts.import_accounts import import_accounts
+from scripts.import_transactions import import_transactions
 
 # Create your tests here.
 transactionView = TransactionViewSet.as_view(
     {"get": "list", "post": "create", "put": "update", "delete": "destroy"}
 )
+
+def get_account_data():
+    account_data = yaml.load(open("backend/assets/fixtures/testAccount.yaml"), Loader=yaml.FullLoader)
+    return account_data
+
+def get_transaction_data():
+    transaction_data = json.load(open('backend/transactions/fixtures/testTransaction.json'))
+    return transaction_data
+
+def get_new_transaction_data():
+    transaction_data_diff = json.load(open('backend/transactions/fixtures/testTransactionDiff.json'))
+    return transaction_data_diff
 
 
 class TranscationTestCase(TestCase):
@@ -23,6 +40,7 @@ class TranscationTestCase(TestCase):
         entity = Entity.objects.create(title="TestEntity")
         # Create a currency
         currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
         # Create an account
         account = Account.objects.create(
@@ -38,7 +56,9 @@ class TranscationTestCase(TestCase):
         request = factory.post(
             "/transactions/",
             {
+                
                 "account": account.id,
+                "external_id": 1111,
                 "category": "Test",
                 "amount_in_cents": 1234,
                 "is_transfer": False,
@@ -60,12 +80,14 @@ class TranscationTestCase(TestCase):
         request2 = factory.put(
             "/transactions/" + str(transaction.id),
             {
+                "external_id": 2222,
                 "account": account.id,
                 "category": "Tester",
                 "amount_in_cents": 1234,
                 "is_transfer": False,
                 "is_spending": True,
                 "merchant": "Testaurant",
+                "internally_editted": True
             },
         )
         force_authenticate(request2, user=user)
@@ -118,6 +140,7 @@ class TranscationTestCase(TestCase):
         request1 = factory.post(
             "/transactions/",
             {
+                "external_id": 3333,
                 "account": account1.id,
                 "category": "Test",
                 "amount_in_cents": 1234,
@@ -143,6 +166,7 @@ class TranscationTestCase(TestCase):
         request2 = factory.post(
             "/transactions/",
             {
+                "external_id": 4444,
                 "account": account2.id,
                 "category": "Test",
                 "amount_in_cents": 5678,
@@ -171,6 +195,7 @@ class TranscationTestCase(TestCase):
         entity = Entity.objects.create(title="TestEntity")
         # Create a currency
         currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
         # Create an account
         account = Account.objects.create(
@@ -181,9 +206,11 @@ class TranscationTestCase(TestCase):
             entity=entity,
             currency=currency,
         )
+        # Confirm one account was created
         self.assertEqual(Account.objects.count(), 1)
         # Create three transactions
         create_transaction1 = {
+            "external_id": 5555,
             "account": account.id,
             "category": "Test",
             "amount_in_cents": 1234,
@@ -192,6 +219,7 @@ class TranscationTestCase(TestCase):
             "merchant": "Testaurant",
         }
         create_transaction2 = {
+            "external_id": 6666,
             "account": account.id,
             "category": "Test",
             "amount_in_cents": 5678,
@@ -200,6 +228,7 @@ class TranscationTestCase(TestCase):
             "merchant": "Testaurant",
         }
         create_transaction3 = {
+            "external_id": 7777,
             "account": account.id,
             "category": "Test",
             "amount_in_cents": 9012,
@@ -217,19 +246,21 @@ class TranscationTestCase(TestCase):
         request3 = factory.post("/transactions/", create_transaction3)
         force_authenticate(request3, user=user)
         transactionView(request3)
-
+        # Confirm 3 transactions were created
         self.assertEqual(Transaction.objects.count(), 3)
-
+        # Get a limit of 2 transaction results
         request4 = factory.get("/transactions/?limit=2")
         force_authenticate(request4, user=user)
         response1 = transactionView(request4)
-        self.assertEqual(len(response1.data['results']), 2)
-
+        # Confirm 2 results
+        self.assertEqual(len(response1.data["results"]), 2)
+        # Get transactions with an offset of 2
         request5 = factory.get("/transactions/?offset=2")
         force_authenticate(request5, user=user)
         response2 = transactionView(request5)
-        self.assertEqual(len(response2.data['results']), 1)
-        self.assertEqual(response2.data['results'][0]['amount_in_cents'], 9012)
+        # Confirm there is one transaction (starting at two, there is one transaction after)
+        self.assertEqual(len(response2.data["results"]), 1)
+        self.assertEqual(response2.data["results"][0]["amount_in_cents"], 9012)
 
     def test_django_filters(self):
         factory = APIRequestFactory()
@@ -241,6 +272,7 @@ class TranscationTestCase(TestCase):
         entity = Entity.objects.create(title="TestEntity")
         # Create a currency
         currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
         userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
         # Create an account
         account = Account.objects.create(
@@ -251,9 +283,11 @@ class TranscationTestCase(TestCase):
             entity=entity,
             currency=currency,
         )
+        # Confirm one account was created
         self.assertEqual(Account.objects.count(), 1)
         # Create two transactions
         create_transaction1 = {
+            "external_id": 8888,
             "account": account.id,
             "category": "Food",
             "amount_in_cents": 5678,
@@ -262,6 +296,7 @@ class TranscationTestCase(TestCase):
             "merchant": "Testaurant",
         }
         create_transaction2 = {
+            "external_id": 9999,
             "account": account.id,
             "category": "Gym",
             "amount_in_cents": 1234,
@@ -277,20 +312,99 @@ class TranscationTestCase(TestCase):
         force_authenticate(request2, user=user)
         transactionView(request2)
 
-        request3 = factory.get('/transactions/?category=Food')
+        # Get transactions whose category is Food
+        request3 = factory.get("/transactions/?category=Food")
         force_authenticate(request3, user=user)
         response1 = transactionView(request3)
-        self.assertEqual(len(response1.data['results']), 1)
-
-        request4 = factory.get('/transactions/?category=Gym')
+        # Confirm one result
+        self.assertEqual(len(response1.data["results"]), 1)
+        # Get transactions whose category is Gym
+        request4 = factory.get("/transactions/?category=Gym")
         force_authenticate(request4, user=user)
         response2 = transactionView(request4)
-        self.assertEqual(len(response2.data['results']), 1)
-
-        request5 = factory.get('/transactions?search=Yoga')
+        # Confirm one result
+        self.assertEqual(len(response2.data["results"]), 1)
+        # Search transactions for Yoga
+        request5 = factory.get("/transactions?search=Yoga")
         force_authenticate(request5, user=user)
         response3 = transactionView(request5)
-        self.assertEqual(len(response3.data['results']), 1)
-        self.assertEqual(response3.data['results'][0]["category"], "Gym")
-        
+        # Confirm one result
+        self.assertEqual(len(response3.data["results"]), 1)
+        self.assertEqual(response3.data["results"][0]["category"], "Gym")
+        # Get transactions in order of amount_in_cents
+        request6 = factory.get("/transactions?ordering=amount_in_cents")
+        force_authenticate(request6, user=user)
+        response4 = transactionView(request6)
+        # Confirm the first result is the correct one
+        self.assertEqual(response4.data["results"][0]["merchant"], "Yoga")
 
+    def test_import_transactions(self):
+        factory = APIRequestFactory()
+        # Create a user
+        user = User.objects.create_user(
+            username="testUser", email="example@example.com", password="somepassword123"
+        )
+        # Create an entity
+        entity = Entity.objects.create(title="TestEntity")
+        # Create a currency
+        currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
+        userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
+        # Import account
+        import_accounts(get_account_data(), currency, entity)
+        # Import transactions
+        import_transactions(get_transaction_data())
+        # Confirm 5 transactions were imported
+        self.assertEqual(Transaction.objects.count(), 5)
+        # Import same transactions again
+        import_transactions(get_transaction_data())
+        # Confirm no new transactions were created
+        self.assertEqual(Transaction.objects.count(), 5)
+
+    def test_bad_data(self):
+        factory = APIRequestFactory()
+        # Create a user
+        user = User.objects.create_user(
+            username="testUser", email="example@example.com", password="somepassword123"
+        )
+        # Create an entity
+        entity = Entity.objects.create(title="TestEntity")
+        # Create a currency
+        currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
+        userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
+        # Import account
+        import_accounts(get_account_data(), currency, entity)
+        # Try with bad data and ensure we cant load
+        bunk_data = get_transaction_data()
+        # Change the account name for one transaction
+        bunk_data[0]['account'] = 'Audreys Bank'
+        # Import transactions
+        import_transactions(bunk_data)
+        # 4 transactions were loaded
+        self.assertEqual(Transaction.objects.count(), 4)
+        # 1 transaction was for an account that does not exist, an Error was created
+        self.assertEqual(Error.objects.count(), 1)
+
+    def test_internal_edit(self):
+        factory = APIRequestFactory()
+        # Create a user
+        user = User.objects.create_user(
+            username="testUser", email="example@example.com", password="somepassword123"
+        )
+        # Create an entity
+        entity = Entity.objects.create(title="TestEntity")
+        # Create a currency
+        currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
+        userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
+        # Import account
+        import_accounts(get_account_data(), currency, entity)
+        # Import transactions
+        import_transactions(get_transaction_data())
+        # Confirm 5 transactions were imported
+        self.assertEqual(Transaction.objects.count(), 5)
+        # Import new transaction data
+        import_transactions(get_new_transaction_data())
+        # Confirm still 5 transactions
+        self.assertEqual(Transaction.objects.count(), 5)
