@@ -49,6 +49,7 @@ spritesmith.scss
 tmp_email/
 
 
+backend/assets/fixtures/testAccount.yaml
 backend/transactions/fixtures/testTransaction.json
 scripts/accounts.yaml
 scripts/t.json
