@@ -47,3 +47,10 @@ spritesmith.scss
 
 # templated email
 tmp_email/
+
+
+backend/transactions/fixtures/testTransaction.json
+scripts/accounts.yaml
+scripts/t.json
+scripts/t2.json
+
