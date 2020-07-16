@@ -253,3 +253,7 @@ class AssetTestCase(TestCase):
         import_accounts(get_account_data(), currency, entity)
         # Confirm one account was imported
         self.assertEqual(Account.objects.count(), 1)
+        # Import account again
+        import_accounts(get_account_data(), currency, entity)
+        # Confirm there is still one account
+        self.assertEqual(Account.objects.count(), 1)

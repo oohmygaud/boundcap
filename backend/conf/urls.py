@@ -15,11 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.conf.urls import include
-from backend.assets.views import AssetViewSet, AccountViewSet
-from backend.transactions.views import TransactionViewSet
+from django.conf.urls import include, re_path
+from backend.assets.views import AssetViewSet, AccountViewSet, CurrencyViewSet
+from backend.transactions.views import TransactionViewSet, CategoryViewSet
 from backend.errors.views import ErrorViewSet
-from backend.users.views import UserViewSet
+from backend.users.views import UserViewSet, EntityViewSet, UserAllowedEntityViewSet
 from rest_framework import routers
 from backend.users import views
 
@@ -29,6 +29,10 @@ router.register(r"accounts", AccountViewSet)
 router.register(r"transactions", TransactionViewSet)
 router.register(r"users", UserViewSet)
 router.register(r"errors", ErrorViewSet)
+router.register(r"currencies", CurrencyViewSet)
+router.register(r"entities", EntityViewSet)
+router.register(r"user_permissions", UserAllowedEntityViewSet)
+router.register(r"categories", CategoryViewSet)
 
 api_urlpatterns = [path("auth/", include("rest_registration.api.urls"))] + router.urls
 
@@ -38,4 +42,8 @@ urlpatterns = [
     path("", views.private),
     path("register/", views.public),
     path("login/", views.public),
+    path("entities/", views.private),
+    re_path(r"^entities/.*", views.private),
+    re_path(r"^user_permissions/.*", views.private),
+    re_path(r"^transactions/.*", views.private)
 ]

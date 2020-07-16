@@ -16,16 +16,25 @@ transactionView = TransactionViewSet.as_view(
     {"get": "list", "post": "create", "put": "update", "delete": "destroy"}
 )
 
+
 def get_account_data():
-    account_data = yaml.load(open("backend/assets/fixtures/testAccount.yaml"), Loader=yaml.FullLoader)
+    account_data = yaml.load(
+        open("backend/assets/fixtures/testAccount.yaml"), Loader=yaml.FullLoader
+    )
     return account_data
 
+
 def get_transaction_data():
-    transaction_data = json.load(open('backend/transactions/fixtures/testTransaction.json'))
+    transaction_data = json.load(
+        open("backend/transactions/fixtures/testTransaction.json")
+    )
     return transaction_data
 
+
 def get_new_transaction_data():
-    transaction_data_diff = json.load(open('backend/transactions/fixtures/testTransactionDiff.json'))
+    transaction_data_diff = json.load(
+        open("backend/transactions/fixtures/testTransactionDiff.json")
+    )
     return transaction_data_diff
 
 
@@ -56,7 +65,6 @@ class TranscationTestCase(TestCase):
         request = factory.post(
             "/transactions/",
             {
-                
                 "account": account.id,
                 "external_id": 1111,
                 "category": "Test",
@@ -87,7 +95,7 @@ class TranscationTestCase(TestCase):
                 "is_transfer": False,
                 "is_spending": True,
                 "merchant": "Testaurant",
-                "internally_editted": True
+                "internally_editted": True,
             },
         )
         force_authenticate(request2, user=user)
@@ -378,13 +386,52 @@ class TranscationTestCase(TestCase):
         # Try with bad data and ensure we cant load
         bunk_data = get_transaction_data()
         # Change the account name for one transaction
-        bunk_data[0]['account'] = 'Audreys Bank'
+        bunk_data[0]["account"] = "Audreys Bank"
         # Import transactions
         import_transactions(bunk_data)
         # 4 transactions were loaded
         self.assertEqual(Transaction.objects.count(), 4)
         # 1 transaction was for an account that does not exist, an Error was created
         self.assertEqual(Error.objects.count(), 1)
+
+    def test_external_edit(self):
+        factory = APIRequestFactory()
+        # Create a user
+        user = User.objects.create_user(
+            username="testUser", email="example@example.com", password="somepassword123"
+        )
+        # Create an entity
+        entity = Entity.objects.create(title="TestEntity")
+        # Create a currency
+        currency = Currency.objects.create(abbreviation="USD")
+        # Create permissions for the entity
+        userAllowedEntity = UserAllowedEntity.objects.create(entity=entity, user=user)
+        # Import account
+        import_accounts(get_account_data(), currency, entity)
+        # Import original transactions
+        original_data = get_transaction_data()
+        import_transactions(original_data)
+        # Confirm 5 transactions were imported
+        self.assertEqual(Transaction.objects.count(), 5)
+        # Confirm the category of this transaction is Groceries
+        self.assertEqual(
+            Transaction.objects.get(merchant="TE TE TAPHOUSE").category, "Groceries"
+        )
+        # In new transaction data, change the category of this transaction to Restaurants
+        new_data = original_data
+        new_data[1]["category"] = "Restaurants"
+        # Import new data
+        import_transactions(new_data)
+        # Confirm still 5 transactions
+        self.assertEqual(Transaction.objects.count(), 5)
+        # Confirm the transaction's category has changed
+        self.assertEqual(
+            Transaction.objects.get(merchant="TE TE TAPHOUSE").category, "Restaurants"
+        )
+        # Confirm the transaction is marked as externally editted
+        self.assertEqual(
+            Transaction.objects.get(merchant="TE TE TAPHOUSE").externally_editted, True
+        )
 
     def test_internal_edit(self):
         factory = APIRequestFactory()
@@ -401,10 +448,42 @@ class TranscationTestCase(TestCase):
         # Import account
         import_accounts(get_account_data(), currency, entity)
         # Import transactions
-        import_transactions(get_transaction_data())
+        original_data = get_transaction_data()
+        import_transactions(original_data)
         # Confirm 5 transactions were imported
         self.assertEqual(Transaction.objects.count(), 5)
-        # Import new transaction data
-        import_transactions(get_new_transaction_data())
-        # Confirm still 5 transactions
+        # Confirm the transaction's category is Groceries
+        self.assertEqual(
+            Transaction.objects.get(merchant="TE TE TAPHOUSE").category, "Groceries"
+        )
+
+        transaction = Transaction.objects.get(merchant="TE TE TAPHOUSE")
+        # Update the transaction's category with an API put
+        request = factory.put(
+            "/transactions/" + str(transaction.id),
+            {
+                "external_id": 864707905,
+                "account": Account.objects.first().id,
+                "category": "Restaurants",
+                "amount_in_cents": 7321,
+                "is_transfer": False,
+                "is_spending": True,
+                "merchant": "TE TE TAPHOUSE",
+                "internally_editted": True,
+            },
+        )
+        force_authenticate(request, user=user)
+        response = transactionView(
+            request, pk=Transaction.objects.get(external_id=864707905).id
+        )
+        # Confirm there are still 5 transactions
         self.assertEqual(Transaction.objects.count(), 5)
+        # Confirm the category was changed
+        self.assertEqual(
+            Transaction.objects.get(external_id=864707905).category, "Restaurants"
+        )
+        # Confirm the transaction was marked as internally editted
+        self.assertEqual(
+            Transaction.objects.get(external_id=864707905).internally_editted, True
+        )
+

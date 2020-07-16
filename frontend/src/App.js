@@ -1,19 +1,27 @@
 import React from "react";
 import { Link, View, NotFoundBoundary, useLoadingRoute } from "react-navi";
 import "./App.css";
+import  { Provider as FetchProvider } from 'use-http'
+import Cookie from "js.cookie";
 
 function App() {
+  const options = {
+    headers: {
+      "X-CSRFToken": Cookie.get( "csrftoken" ),
+    },
+  };
   let loadingRoute = useLoadingRoute();
 
   return (
     <div className="App">
+      <FetchProvider options={options}>
       <header className="App-header">
         <nav className="App-nav">
           <Link href="/" activeClassName="active" exact>
             Home
           </Link>
-          <Link href="/getting-started/" activeClassName="active">
-            Getting Started
+          <Link href="/entities/" activeClassName="active">
+            Entities
           </Link>
         </nav>
       </header>
@@ -33,6 +41,7 @@ function App() {
             <View />
         </NotFoundBoundary>
       </main>
+      </FetchProvider>
     </div>
   );
 }

@@ -3,6 +3,9 @@ import { mount, route } from 'navi'
 import Dashboard from "../components/Dashboard";
 import Register from "../components/Register";
 import Login from "../components/Login";
+import Entities from "../components/Entities";
+import EntityDetails from "../components/EntityDetails";
+import TransactionDetails from "../components/TransactionDetails";
 
 export default mount({
   "/": route({
@@ -18,15 +21,22 @@ export default mount({
     title: "Login",
     view: <Login />,
   }),
-    
-  '/getting-started': route({
-    title: "Getting Started",
-    getView: async () => {
-      // This simulates some async content loading, so that
-      // you can test the site's loading bar.
-      await new Promise(resolve => setTimeout(resolve, 1000))
 
-      return import('./getting-started.mdx')
+  "/entities": route({
+    title: "Entities",
+    view: <Entities />
+  }),
+
+  "/entities/:id": route({
+    getView: ({ params }) => {
+      return <EntityDetails {...params} />;
     }
   }),
+
+  "/transactions/:id": route({
+    getView: ({ params }) => {
+      return <TransactionDetails {...params} />
+    }
+  })
+
 })

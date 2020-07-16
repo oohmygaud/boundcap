@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .models import Asset, Account
-from .serializers import AssetSerializer, AccountSerializer
+from .models import Asset, Account, Currency
+from .serializers import AssetSerializer, AccountSerializer, CurrencySerializer
 
 # Create your views here.
 class AssetViewSet(viewsets.ModelViewSet):
@@ -19,3 +19,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Account.objects.filter(entity__permissions__user=self.request.user)
         return qs
+
+class CurrencyViewSet(viewsets.ModelViewSet):
+    queryset = Currency.objects.all()
+    serializer_class = CurrencySerializer

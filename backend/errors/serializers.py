@@ -4,4 +4,4 @@ from .models import Error
 class ErrorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Error
-        fields = ['__all__']
+        fields = ["id", "title", "description"]
